@@ -1,0 +1,185 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #0f0f13;
+    font-family: 'Inter', sans-serif;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 30px 30px;
+    color: white;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f0f13;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a2a35;
+  border-radius: 10px;
+}
+
+.card-bg {
+  background-color: #1a1a24;
+  border: 1px solid #2a2a35;
+}
+
+.glow-hover:hover {
+  box-shadow: 0 0 15px rgba(192, 132, 252, 0.3);
+  transform: translateY(-2px);
+}
+
+.fab-glow {
+  box-shadow: 0 4px 20px rgba(192, 132, 252, 0.4);
+}
+
+/* Modal slide-up animation */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* Modal slide-down (close) animation */
+@keyframes slide-down {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+.animate-slide-down {
+  animation: slide-down 0.25s ease-in forwards;
+}
+
+/* Backdrop fade-out animation */
+@keyframes fade-backdrop-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+.animate-backdrop-out {
+  animation: fade-backdrop-out 0.25s ease-in forwards;
+}
+
+/* Horizontal scrollbar for tracker */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #2a2a35 transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  height: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #2a2a35;
+  border-radius: 2px;
+}
+
+/* Yesterday's Sins glow pulse */
+@keyframes pulseGlow {
+
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.35;
+    transform: scale(1.05);
+  }
+}
+
+/* Hold-button active scale */
+.hold-btn:active {
+  transform: scale(0.97);
+}
+
+/* Fade-in for tab content transitions */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+/* Backdrop fade animation */
+@keyframes fade-backdrop {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-backdrop {
+  animation: fade-backdrop 0.2s ease-out;
+}
+
+/* Smooth expand/collapse for content sections */
+.animate-expand {
+  animation: expand 0.3s ease-out;
+  overflow: hidden;
+}
+
+@keyframes expand {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+
+  to {
+    opacity: 1;
+    max-height: 1000px;
+  }
+}
+
+/* Smooth height transition for "Lihat Lebih Banyak" */
+.rate-container {
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
