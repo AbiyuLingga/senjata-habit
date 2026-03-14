@@ -1432,13 +1432,7 @@ function MonthlyTracker({
                       ) : (
                         (() => {
                           // Read per-day notes for tooltip
-                          let note = "";
-                          try {
-                            const allNotes = JSON.parse(
-                              localStorage.getItem("senjata-missed") || "{}",
-                            );
-                            note = allNotes[String(day)]?.[habit.name] || "";
-                          } catch {}
+                          const note = missedNotes[String(day)]?.[habit.name] || "";
                           const isFailed = val !== 1;
                           return (
                             <span className="relative group/cell inline-block">
@@ -1975,16 +1969,9 @@ function App() {
 
               {/* Main habits — mapped from user's manual sort order */}
               {(() => {
-                let missedSaved = {};
-                try {
-                  missedSaved =
-                    JSON.parse(
-                      localStorage.getItem(MISSED_STORAGE_KEY) || "null",
-                    ) || {};
-                } catch {}
                 // Build a flattened per-habit note map from all saved days
                 const missedNotesByHabit = {};
-                Object.entries(missedSaved).forEach(([, dayObj]) => {
+                Object.entries(missedNotes).forEach(([, dayObj]) => {
                   if (dayObj && typeof dayObj === "object") {
                     Object.entries(dayObj).forEach(([hName, reason]) => {
                       if (hName !== "__sleep__" && reason) {
