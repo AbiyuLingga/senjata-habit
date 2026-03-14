@@ -9,6 +9,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import TrackerTab from "./TrackerTab";
+import * as db from "./supabaseService";
 
 // ── Close Animation Hook ────────────────────────────────
 function useCloseAnimation(onClose, duration = 250) {
@@ -69,136 +70,6 @@ const uid = () =>
   Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 // ── Storage helpers ─────────────────────────────────────
-function loadHabits() {
-  try {
-    const stored = localStorage.getItem(HABITS_STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
-  } catch (e) {
-    /* ignore */
-  }
-  localStorage.setItem(HABITS_STORAGE_KEY, JSON.stringify(DEFAULT_HABITS));
-  return DEFAULT_HABITS;
-}
-
-function saveHabits(habits) {
-  // Always sort when saving: Main first, Side second.
-  const sorted = [...habits].sort((a, b) => {
-    const aType = a.type || "main"; // Default to main
-    const bType = b.type || "main";
-    if (aType === "main" && bType === "side") return -1;
-    if (aType === "side" && bType === "main") return 1;
-    return 0; // If same type, maintain order
-  });
-  localStorage.setItem(HABITS_STORAGE_KEY, JSON.stringify(sorted));
-}
-
-function loadCalendar() {
-  try {
-    const stored = localStorage.getItem(CALENDAR_STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
-  } catch (e) {
-    /* ignore */
-  }
-  // Sample activities
-  const sample = [
-    {
-      id: uid(),
-      title: "Belajar Python Ch.1-5",
-      startDate: "2026-03-10",
-      endDate: "2026-03-18",
-      color: "#a855f7",
-      notes: "Focus on loops & functions",
-      completed: false,
-    },
-    {
-      id: uid(),
-      title: "Projek Website Portfolio",
-      startDate: "2026-03-14",
-      endDate: "2026-03-25",
-      color: "#3b82f6",
-      notes: "Design + build landing page",
-      completed: false,
-    },
-    {
-      id: uid(),
-      title: "Persiapan Ujian KREFA",
-      startDate: "2026-03-20",
-      endDate: "2026-03-28",
-      color: "#22c55e",
-      notes: "",
-      completed: false,
-    },
-  ];
-  localStorage.setItem(CALENDAR_STORAGE_KEY, JSON.stringify(sample));
-  return sample;
-}
-
-function saveCalendar(data) {
-  localStorage.setItem(CALENDAR_STORAGE_KEY, JSON.stringify(data));
-}
-
-function getDefaultData(habits) {
-  const data = {};
-  const defaults = [
-    [1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0],
-    [1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1],
-    [1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1],
-    [1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1],
-    [1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0],
-    [1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1],
-    [1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0],
-  ];
-  habits.forEach((h, hi) => {
-    data[h.name] = {};
-    if (hi < defaults.length) {
-      defaults[hi].forEach((val, di) => {
-        data[h.name][di + 1] = val;
-      });
-    }
-  });
-  return data;
-}
-
-function loadTrackingData() {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      // Migration: Convert legacy keys (habitName) to (habitName_CURRENT_YYYY-MM)
-      const currentMonthKey = `${CURRENT_YEAR}-${String(CURRENT_MONTH + 1).padStart(2, "0")}`;
-      let migrated = false;
-      const nextData = { ...parsed };
-
-      Object.keys(parsed).forEach((key) => {
-        // If the key doesn't have a _, it's a legacy habitName root key
-        if (!key.includes("_")) {
-          migrated = true;
-          const newKey = `${key}_${currentMonthKey}`;
-          if (!nextData[newKey]) nextData[newKey] = parsed[key]; // migrate data
-          delete nextData[key]; // remove old
-        }
-      });
-
-      if (migrated) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(nextData));
-        return nextData;
-      }
-      return parsed;
-    }
-  } catch (e) {
-    /* ignore */
-  }
-  const habits = loadHabits();
-  const def = getDefaultData(habits);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(def));
-  return def;
-}
-
-function saveTrackingData(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
 
 // ── Date helpers ────────────────────────────────────────
 function dateToDayOfMonth(dateStr) {
@@ -268,7 +139,7 @@ function CheckInModal({
       if (!next[trackKey]) next[trackKey] = {};
       next[trackKey] = { ...next[trackKey] };
       next[trackKey][today] = next[trackKey][today] === 1 ? 0 : 1;
-      saveTrackingData(next);
+      db.saveTrackingData(next);
       return next;
     });
   };
@@ -1079,20 +950,20 @@ function CalendarModal({ isOpen, onClose, calendarData, setCalendarData }) {
   const handleAddActivity = (newActivity) => {
     const updated = [...calendarData, newActivity];
     setCalendarData(updated);
-    saveCalendar(updated);
+    db.saveCalendar(updated);
   };
 
   const handleUpdateActivity = (updated) => {
     const next = calendarData.map((a) => (a.id === updated.id ? updated : a));
     setCalendarData(next);
-    saveCalendar(next);
+    db.saveCalendar(next);
     setSelectedActivity(updated);
   };
 
   const handleDeleteActivity = (id) => {
     const next = calendarData.filter((a) => a.id !== id);
     setCalendarData(next);
-    saveCalendar(next);
+    db.saveCalendar(next);
   };
 
   return (
@@ -1476,7 +1347,7 @@ function MonthlyTracker({
       if (!next[trackKey]) next[trackKey] = {};
       next[trackKey] = { ...next[trackKey] };
       next[trackKey][day] = next[trackKey][day] === 1 ? 0 : 1;
-      saveTrackingData(next);
+      db.saveTrackingData(next);
       return next;
     });
   };
@@ -1653,8 +1524,8 @@ function App() {
   const isCurrentMonthView =
     viewYear === CURRENT_YEAR && viewMonth === CURRENT_MONTH;
 
-  const [habitsList, setHabitsList] = useState(() => loadHabits());
-  const [trackingData, setTrackingData] = useState(() => loadTrackingData());
+  const [habitsList, setHabitsList] = useState([]);
+  const [trackingData, setTrackingData] = useState({});
 
   const goPrevMonth = () => {
     if (viewMonth === 0) {
@@ -1670,7 +1541,7 @@ function App() {
       setViewMonth(0);
     } else setViewMonth((m) => m + 1);
   };
-  const [calendarData, setCalendarData] = useState(() => loadCalendar());
+  const [calendarData, setCalendarData] = useState([]);
   const [todaySleep, setTodaySleep] = useState(6.5);
   const [showMoreHabits, setShowMoreHabits] = useState(false);
   const rateRef = useRef(null);
@@ -1689,18 +1560,34 @@ function App() {
   }, []);
 
   // Sleep log per day (keyed by day number) for monthly analysis
-  const [sleepLog, setSleepLog] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("senjata-sleep") || "null") || {};
-    } catch {
-      return {};
+  const [sleepLog, setSleepLog] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  // Load all data from Supabase on mount
+  useEffect(() => {
+    async function loadAllData() {
+      setLoading(true);
+      const [habits, tracking, calendar, sleep, missed] = await Promise.all([
+        db.loadHabits(),
+        db.loadTrackingData(),
+        db.loadCalendar(),
+        db.loadSleepLog(),
+        db.loadMissedNotes(),
+      ]);
+      setHabitsList(habits);
+      setTrackingData(tracking);
+      setCalendarData(calendar);
+      setSleepLog(sleep);
+      setMissedNotes(missed);
+      setLoading(false);
     }
-  });
+    loadAllData();
+  }, []);
   const handleSleepChange = (val) => {
     setTodaySleep(val);
     setSleepLog((prev) => {
       const next = { ...prev, [today]: val };
-      localStorage.setItem("senjata-sleep", JSON.stringify(next));
+      db.saveSleepLog(next);
       return next;
     });
   };
@@ -1733,7 +1620,7 @@ function App() {
         h.name === oldName ? { ...h, ...newHabit } : h,
       );
       setHabitsList(updated);
-      saveHabits(updated);
+      db.saveHabits(updated);
 
       // If name changed, migrate tracking data
       if (oldName !== newHabit.name) {
@@ -1744,7 +1631,7 @@ function App() {
           const next = { ...prev };
           delete next[trackKey];
           next[newTrackKey] = oldData;
-          saveTrackingData(next);
+          db.saveTrackingData(next);
           return next;
         });
       }
@@ -1752,11 +1639,11 @@ function App() {
       // Adding new habit
       updated = [...habitsList, { ...newHabit, isDefault: false }];
       setHabitsList(updated);
-      saveHabits(updated);
+      db.saveHabits(updated);
       setTrackingData((prev) => {
         const next = { ...prev };
         next[getTrackKey(newHabit.name)] = {};
-        saveTrackingData(next);
+        db.saveTrackingData(next);
         return next;
       });
     }
@@ -1766,18 +1653,18 @@ function App() {
   // Save manual reorder from EditListModal
   const handleReorderHabits = (newOrder) => {
     setHabitsList([...newOrder]);
-    saveHabits(newOrder);
+    db.saveHabits(newOrder);
   };
 
   const handleDeleteActivity = (habitName) => {
     const updated = habitsList.filter((h) => h.name !== habitName);
     setHabitsList(updated);
-    saveHabits(updated);
+    db.saveHabits(updated);
     // Optionally cleanup tracking log
     setTrackingData((prev) => {
       const next = { ...prev };
       delete next[habitName];
-      saveTrackingData(next);
+      db.saveTrackingData(next);
       return next;
     });
   };
@@ -1860,6 +1747,17 @@ function App() {
         today
       ] === 1,
   ).length;
+
+  if (loading) {
+    return (
+      <div className="max-w-md mx-auto min-h-screen flex items-center justify-center bg-[#0f0f13]">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-400 text-sm">Loading your habits...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-md mx-auto relative pb-24 min-h-screen">
@@ -1952,7 +1850,7 @@ function App() {
               habitsList={habitsList}
               trackingData={trackingData}
               setTrackingData={setTrackingData}
-              saveTrackingData={saveTrackingData}
+              saveTrackingData={db.saveTrackingData}
               today={today}
               onSleepChange={handleSleepChange}
               viewYear={CURRENT_YEAR}
@@ -2598,12 +2496,10 @@ function App() {
                   Skip
                 </button>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     // Save notes per-day: { [dayNum]: { habitName: reason, __sleep__: reason } }
                     try {
-                      const existing = JSON.parse(
-                        localStorage.getItem(MISSED_STORAGE_KEY) || "{}",
-                      );
+                      const existing = await db.loadMissedNotes();
                       const dayKey = String(missedPopup.dayNum);
                       const dayNotes = {};
                       missedPopup.habits.forEach((h) => {
@@ -2612,10 +2508,7 @@ function App() {
                       if (missedNotes["__sleep__"])
                         dayNotes["__sleep__"] = missedNotes["__sleep__"];
                       existing[dayKey] = dayNotes;
-                      localStorage.setItem(
-                        MISSED_STORAGE_KEY,
-                        JSON.stringify(existing),
-                      );
+                      await db.saveMissedNotes(existing);
                     } catch {}
                     triggerCloseMissed();
                   }}
