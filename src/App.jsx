@@ -1534,6 +1534,7 @@ function App() {
   const [todaySleep, setTodaySleep] = useState(6.5);
   const [showMoreHabits, setShowMoreHabits] = useState(false);
   const rateRef = useRef(null);
+  const riwayatScrollRef = useRef(null);
   const [showAllRates, setShowAllRates] = useState(false);
 
   // Missed habit popup state
@@ -1585,6 +1586,23 @@ function App() {
   // Freeze "today" at app load so analytics widgets (Rate Bulanan / Progres Tempur)
   // don't silently shift while the app stays open.
   const [today] = useState(TODAY_DAY);
+
+  // When entering Analisis tab (or changing viewed month), auto-scroll Riwayat Kebiasaan to the last day.
+  useEffect(() => {
+    if (activeTab !== "Analisis") return;
+    const el = riwayatScrollRef.current;
+    if (!el) return;
+    let raf2 = null;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        el.scrollTo({ left: el.scrollWidth, behavior: "smooth" });
+      });
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+    };
+  }, [activeTab, viewYear, viewMonth]);
 
   // Check for missed habits from yesterday on mount
   useEffect(() => {
@@ -2349,8 +2367,11 @@ function App() {
                     <span className="text-xs text-gray-500 font-normal">
                       {monthNames[viewMonth]} {viewYear}
                     </span>
-                  </h3>
-	                  <div className="overflow-x-auto">
+	                  </h3>
+	                  <div
+	                    className="overflow-x-auto scrollbar-thin"
+	                    ref={riwayatScrollRef}
+	                  >
 	                    <table className="w-full text-xs border-collapse" style={{ minWidth: `${maxDay * 32 + 120}px` }}>
 	                      <thead>
                         <tr>
