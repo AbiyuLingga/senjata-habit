@@ -1659,11 +1659,10 @@ function App() {
     });
   };
 
-  // Data Grafik Progres Tempur – only default habits
-  const defaultHabitsList = habitsList.filter((h) => h.isDefault !== false);
+  // Data Grafik Progres Tempur – include all habits
   const progressData = Array.from({ length: today }, (_, i) => {
     const day = i + 1;
-    const score = defaultHabitsList.reduce(
+    const score = habitsList.reduce(
       (sum, h) => sum + (trackingData[h.name]?.[day] === 1 ? 1 : 0),
       0,
     );
@@ -1695,29 +1694,29 @@ function App() {
   const allHabitStats = habitsList.map(computeHabitStats);
   const habits = allHabitStats;
 
-  // Overall rate – default habits only
-  const totalDone = defaultHabitsList.reduce((sum, h) => {
+  // Overall rate – all habits
+  const totalDone = habitsList.reduce((sum, h) => {
     let d = 0;
     for (let day = 1; day <= today; day++) {
       if (trackingData[h.name]?.[day] === 1) d++;
     }
     return sum + d;
   }, 0);
-  const totalPossible = defaultHabitsList.length * today;
+  const totalPossible = habitsList.length * today;
   const overallPct =
     totalPossible > 0 ? Math.round((totalDone / totalPossible) * 100) : 0;
 
-  // Today's score – default habits only
-  const todayScore = defaultHabitsList.reduce(
+  // Today's score – all habits
+  const todayScore = habitsList.reduce(
     (s, h) => s + (trackingData[h.name]?.[today] === 1 ? 1 : 0),
     0,
   );
 
-  // Best streak – default habits only
+  // Best streak – all habits
   let bestStreak = 0,
     currentStreak = 0;
   for (let d = 1; d <= today; d++) {
-    const allDone = defaultHabitsList.every(
+    const allDone = habitsList.every(
       (h) =>
         trackingData[getTrackKey(h.name, CURRENT_YEAR, CURRENT_MONTH)]?.[d] ===
         1,
