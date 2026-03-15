@@ -35,7 +35,21 @@ export async function loadHabits() {
     return DEFAULT_HABITS;
   }
 
-  return data;
+  // Deduplicate by name (keep first occurrence by sort_order)
+  const seen = new Set();
+  const unique = data.filter((h) => {
+    if (seen.has(h.name)) return false;
+    seen.add(h.name);
+    return true;
+  });
+
+  // If duplicates were found, clean them up in the DB automatically
+  if (unique.length < data.length) {
+    console.warn(`Found ${data.length - unique.length} duplicate habit(s). Cleaning up...`);
+    await saveHabits(unique);
+  }
+
+  return unique;
 }
 
 export async function saveHabits(habits) {
