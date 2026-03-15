@@ -2350,9 +2350,9 @@ function App() {
                       {monthNames[viewMonth]} {viewYear}
                     </span>
                   </h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs border-collapse" style={{ minWidth: `${maxDay * 32 + 120}px` }}>
-                      <thead>
+	                  <div className="overflow-x-auto">
+	                    <table className="w-full text-xs border-collapse" style={{ minWidth: `${maxDay * 32 + 120}px` }}>
+	                      <thead>
                         <tr>
                           <th className="text-left text-gray-500 font-medium py-1.5 pr-3 sticky left-0 bg-[#1a1a24] z-10 min-w-[110px]">Habit</th>
                           {days.map((d) => (
@@ -2380,38 +2380,64 @@ function App() {
                               >
                                 {h.name}
                               </td>
-                              {days.map((d) => {
-                                const val = trackingData[key]?.[d];
-                                const isDone = val === 1;
-                                const isFuture = isCurrentMV && d > today;
-                                return (
-                                  <td key={d} className="text-center py-1">
-                                    <button
-                                      onClick={() => !isFuture && toggleDay(h.name, d)}
-                                      disabled={isFuture}
-                                      className={`w-6 h-6 rounded text-[11px] transition-all ${isFuture
-                                          ? "opacity-20 cursor-not-allowed bg-[#2a2a35]"
-                                          : isDone
-                                            ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
-                                            : "bg-red-500/10 text-red-400 hover:bg-red-500/20"
-                                        }`}
-                                      title={`${h.name} – Hari ${d}: ${isDone ? "Done" : "Missed"}`}
-                                    >
-                                      {isFuture ? "·" : isDone ? "✓" : "✗"}
-                                    </button>
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          );
+	                              {days.map((d) => {
+	                                const val = trackingData[key]?.[d];
+	                                const isDone = val === 1;
+	                                const isFuture = isCurrentMV && d > today;
+	                                return (
+	                                  <td key={d} className="text-center py-1">
+	                                    {isFuture ? (
+	                                      <span className="text-gray-700 text-[10px]">·</span>
+	                                    ) : (
+	                                      (() => {
+	                                        const note = isCurrentMV
+	                                          ? missedNotes[String(d)]?.[h.name] || ""
+	                                          : "";
+	                                        const isFailed = !isDone;
+	                                        return (
+	                                          <span className="relative group/cell inline-block">
+	                                            <button
+	                                              onClick={() => toggleDay(h.name, d)}
+	                                              className={`w-6 h-6 rounded text-[11px] transition-all hover:scale-110 ${isDone
+	                                                  ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
+	                                                  : "bg-red-500/10 text-red-400 hover:bg-red-500/20"
+	                                                }`}
+	                                              title={`${h.name} – Hari ${d}: ${isDone ? "Done" : "Missed"}`}
+	                                            >
+	                                              {isDone ? "✓" : "✗"}
+	                                            </button>
+	                                            {isCurrentMV && isFailed && (
+	                                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-50 pointer-events-none opacity-0 group-hover/cell:opacity-100 transition-opacity duration-150 w-max max-w-[180px]">
+	                                                <div className="bg-[#1a1a24] border border-red-500/25 rounded-lg px-2.5 py-1.5 text-[10px] text-left shadow-xl">
+	                                                  <p className="text-red-400 font-semibold mb-0.5">
+	                                                    Hari {d} — Gagal
+	                                                  </p>
+	                                                  <p className="text-gray-400 italic leading-snug">
+	                                                    {note || "Tidak ada catatan"}
+	                                                  </p>
+	                                                </div>
+	                                                <div className="w-2 h-2 bg-[#1a1a24] border-r border-b border-red-500/25 rotate-45 mx-auto -mt-1" />
+	                                              </div>
+	                                            )}
+	                                          </span>
+	                                        );
+	                                      })()
+	                                    )}
+	                                  </td>
+	                                );
+	                              })}
+	                            </tr>
+	                          );
                         })}
                       </tbody>
                     </table>
-                  </div>
-                  <p className="text-[10px] text-gray-600 mt-2">Tap ✓/✗ untuk ubah status hari sebelumnya</p>
-                </div>
-              );
-            })()}
+	                  </div>
+	                  <p className="text-[10px] text-gray-600 mt-2">
+	                    Tap ✓/✗ untuk ubah status • Hover yang merah buat lihat catatan
+	                  </p>
+	                </div>
+	              );
+	            })()}
 
             {/* Monthly Tracker Grid – read-only in Analisis tab */}
             <MonthlyTracker
