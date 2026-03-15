@@ -49,7 +49,16 @@ export async function loadHabits() {
     await saveHabits(unique);
   }
 
-  return unique;
+  // Convert DB columns to app format (camelCase)
+  return unique.map((h) => ({
+    id: h.id,
+    name: h.name,
+    color: h.color,
+    type: h.type || 'main',
+    isDefault: h.is_default ?? h.isDefault ?? false,
+    sortOrder: h.sort_order ?? h.sortOrder,
+    createdAt: h.created_at ?? h.createdAt,
+  }));
 }
 
 export async function saveHabits(habits) {
@@ -79,7 +88,7 @@ export async function saveHabits(habits) {
     name: h.name,
     color: h.color,
     type: h.type || 'main',
-    is_default: h.isDefault || false,
+    is_default: h.isDefault ?? h.is_default ?? false,
     sort_order: index,
   }));
 
@@ -166,7 +175,17 @@ export async function loadCalendar() {
     return [];
   }
 
-  return data || [];
+  // Convert DB columns to app format (camelCase)
+  return (data || []).map((a) => ({
+    id: a.id,
+    user_id: a.user_id,
+    title: a.title,
+    startDate: a.start_date ?? a.startDate,
+    endDate: a.end_date ?? a.endDate,
+    color: a.color,
+    notes: a.notes || '',
+    completed: a.completed || false,
+  }));
 }
 
 export async function saveCalendar(activities) {
@@ -187,8 +206,8 @@ export async function saveCalendar(activities) {
     id: a.id,
     user_id: USER_ID,
     title: a.title,
-    start_date: a.startDate,
-    end_date: a.endDate,
+    start_date: a.startDate ?? a.start_date,
+    end_date: a.endDate ?? a.end_date,
     color: a.color,
     notes: a.notes || '',
     completed: a.completed || false,
