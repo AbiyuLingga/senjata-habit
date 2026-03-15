@@ -217,34 +217,23 @@ Vercel automatically redeploys within 1-2 minutes ✨
 
 ## 🔐 Optional: Add User Authentication
 
-Right now, if you use a fixed `user_id` (example: `'local-user'`), then **everyone visiting your site shares the same data**.
-
-To make your website private (so other visitors cannot change your habits), you need:
-1) Supabase Auth (login)
-2) Row Level Security (RLS) policies (per-user database access)
+Right now, everyone shares the same `user_id = 'local-user'`. To add real login:
 
 ### Enable Supabase Auth
 
 1. **Supabase dashboard → Authentication → Providers**
-2. Enable **Email** (password) and optionally disable **Sign ups** if you want only your account
-3. **Authentication → URL Configuration**
-   - Set **Site URL** to your Vercel domain (example: `https://senjata-habit.vercel.app`)
-   - Add any additional redirect URLs you use (preview domains, custom domain)
+2. Enable **Email** (or Google/GitHub)
+3. Update `src/supabaseService.js`:
 
-### Enable RLS (IMPORTANT)
+```js
+// Replace this line:
+const USER_ID = 'local-user';
 
-1. Supabase dashboard → **SQL Editor**
-2. Open `SUPABASE_RLS.sql` in this repo and run it.
-
-⚠️ If you already have old shared rows with `user_id = 'local-user'`, delete/migrate them first (otherwise you may be confused why old data “disappears” after RLS):
-
-```sql
-delete from public.habits where user_id = 'local-user';
-delete from public.tracking where user_id = 'local-user';
-delete from public.calendar_activities where user_id = 'local-user';
-delete from public.missed_notes where user_id = 'local-user';
-delete from public.sleep_log where user_id = 'local-user';
+// With this:
+const USER_ID = await supabase.auth.getUser().then(u => u.data?.user?.id || 'local-user');
 ```
+
+4. Add login UI using [Supabase Auth UI](https://supabase.com/docs/guides/auth/auth-helpers/auth-ui)
 
 ---
 

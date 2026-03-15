@@ -9,9 +9,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import TrackerTab from "./TrackerTab";
-import AuthScreen from "./AuthScreen";
 import * as db from "./supabaseService";
-import { supabase } from "./supabase";
 
 // ── Close Animation Hook ────────────────────────────────
 function useCloseAnimation(onClose, duration = 250) {
@@ -1497,8 +1495,6 @@ function MonthlyTracker({
 // ── Main App ────────────────────────────────────────────
 function App() {
   const [activeTab, setActiveTab] = useState("Tracker");
-  const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
   const [yesterdayFailures] = useState([
     {
       habit: "Ga begadang 🔥",
@@ -1556,64 +1552,27 @@ function App() {
   const [sleepLog, setSleepLog] = useState({});
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let mounted = true;
-    async function initAuth() {
-      const { data } = await supabase.auth.getSession();
-      if (!mounted) return;
-      setUser(data?.session?.user ?? null);
-      setAuthLoading(false);
-    }
-    initAuth();
-
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null);
-      },
-    );
-
-    return () => {
-      mounted = false;
-      listener?.subscription?.unsubscribe();
-    };
-  }, []);
-
-  // Load all data from Supabase once authenticated
+  // Load all data from Supabase on mount
   useEffect(() => {
     async function loadAllData() {
-      if (!user?.id) {
-        setHabitsList([]);
-        setTrackingData({});
-        setCalendarData([]);
-        setSleepLog({});
-        setMissedNotes({});
-        setLoading(false);
-        return;
-      }
-
       setLoading(true);
-      try {
-        const [habits, tracking, calendar, sleep, missed] = await Promise.all([
-          db.loadHabits(),
-          db.loadTrackingData(),
-          db.loadCalendar(),
-          db.loadSleepLog(),
-          db.loadMissedNotes(),
-        ]);
-        setHabitsList(habits);
-        setTrackingData(tracking);
-        setCalendarData(calendar);
-        setSleepLog(sleep);
-        setMissedNotes(missed);
-      } catch (err) {
-        console.error("Error loading data:", err);
-      } finally {
-        setLoading(false);
-      }
+      const [habits, tracking, calendar, sleep, missed] = await Promise.all([
+        db.loadHabits(),
+        db.loadTrackingData(),
+        db.loadCalendar(),
+        db.loadSleepLog(),
+        db.loadMissedNotes(),
+      ]);
+      setHabitsList(habits);
+      setTrackingData(tracking);
+      setCalendarData(calendar);
+      setSleepLog(sleep);
+      setMissedNotes(missed);
+      setLoading(false);
     }
 
     loadAllData();
-  }, [user?.id]);
+  }, []);
   const handleSleepChange = (val) => {
     setTodaySleep(val);
     setSleepLog((prev) => {
@@ -1784,21 +1743,6 @@ function App() {
       ] === 1,
   ).length;
 
-  if (authLoading) {
-    return (
-      <div className="max-w-md mx-auto min-h-screen flex items-center justify-center bg-[#0f0f13]">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-400 text-sm">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <AuthScreen />;
-  }
-
   if (loading) {
     return (
       <div className="max-w-md mx-auto min-h-screen flex items-center justify-center bg-[#0f0f13]">
@@ -1824,19 +1768,12 @@ function App() {
             </p>
             <h1 className="text-xl font-bold">Senjata Habit</h1>
           </div>
-	        </div>
-	        <div className="flex space-x-4">
-	          <button
-	            onClick={() => supabase.auth.signOut()}
-	            className="w-8 h-8 rounded-full card-bg flex items-center justify-center hover:border-purple-400 text-gray-400 transition-colors hover:scale-110"
-	            title="Sign out"
-	          >
-	            ⎋
-	          </button>
-	          <button
-	            onClick={() => setShowEditListModal(true)}
-	            className="w-8 h-8 rounded-full card-bg flex items-center justify-center hover:border-purple-400 text-gray-400 transition-colors hover:scale-110"
-	            title="Edit Aktivitas"
+        </div>
+        <div className="flex space-x-4">
+          <button
+            onClick={() => setShowEditListModal(true)}
+            className="w-8 h-8 rounded-full card-bg flex items-center justify-center hover:border-purple-400 text-gray-400 transition-colors hover:scale-110"
+            title="Edit Aktivitas"
           >
             ✎
           </button>
