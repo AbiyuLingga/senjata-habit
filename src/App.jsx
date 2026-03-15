@@ -201,11 +201,10 @@ function CheckInModal({
                 <button
                   key={habit.name}
                   onClick={() => toggleHabit(habit.name)}
-                  className={`w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200 ${
-                    isDone
-                      ? "bg-green-500/10 border border-green-500/30"
-                      : "bg-[#2a2a35]/50 border border-transparent hover:border-gray-600"
-                  }`}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200 ${isDone
+                    ? "bg-green-500/10 border border-green-500/30"
+                    : "bg-[#2a2a35]/50 border border-transparent hover:border-gray-600"
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <div
@@ -219,11 +218,10 @@ function CheckInModal({
                     </span>
                   </div>
                   <div
-                    className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${
-                      isDone
-                        ? "bg-green-500/20 text-green-400"
-                        : "bg-red-500/10 text-red-400"
-                    }`}
+                    className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${isDone
+                      ? "bg-green-500/20 text-green-400"
+                      : "bg-red-500/10 text-red-400"
+                      }`}
                   >
                     {isDone ? "✓" : "✗"}
                   </div>
@@ -1036,13 +1034,12 @@ function CalendarModal({ isOpen, onClose, calendarData, setCalendarData }) {
                           {MONTH_NAMES[viewMonth].slice(0, 5)}
                         </span>
                         <div
-                          className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold transition-all ${
-                            isToday
-                              ? "border-2 border-purple-500 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.4)]"
-                              : isPast
-                                ? "text-gray-600"
-                                : "text-gray-500"
-                          }`}
+                          className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold transition-all ${isToday
+                            ? "border-2 border-purple-500 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.4)]"
+                            : isPast
+                              ? "text-gray-600"
+                              : "text-gray-500"
+                            }`}
                         >
                           {d}
                         </div>
@@ -1308,6 +1305,7 @@ function MonthlyTracker({
   failureData = [],
   viewYear = CURRENT_YEAR,
   viewMonth = CURRENT_MONTH,
+  missedNotes = {},
 }) {
   const scrollRef = useRef(null);
 
@@ -1382,13 +1380,12 @@ function MonthlyTracker({
                 <th
                   key={d}
                   data-day={d}
-                  className={`text-[11px] font-semibold py-2 px-1.5 min-w-[30px] ${
-                    isCurrentMonth && d === today
-                      ? "text-purple-400 bg-purple-500/10 rounded-t-lg"
-                      : isCurrentMonth && d > today
-                        ? "text-[#2a2a35]" // Future days in current month dim
-                        : "text-gray-500" // Past days or past months solid
-                  }`}
+                  className={`text-[11px] font-semibold py-2 px-1.5 min-w-[30px] ${isCurrentMonth && d === today
+                    ? "text-purple-400 bg-purple-500/10 rounded-t-lg"
+                    : isCurrentMonth && d > today
+                      ? "text-[#2a2a35]" // Future days in current month dim
+                      : "text-gray-500" // Past days or past months solid
+                    }`}
                 >
                   {d}
                 </th>
@@ -1438,11 +1435,10 @@ function MonthlyTracker({
                             <span className="relative group/cell inline-block">
                               <button
                                 onClick={() => toggleDay(habit.name, day)}
-                                className={`inline-flex items-center justify-center w-5 h-5 rounded-md text-[10px] font-bold transition-all duration-200 hover:scale-125 ${
-                                  val === 1
-                                    ? "bg-green-500/15 text-green-400"
-                                    : "bg-red-500/15 text-red-400"
-                                }`}
+                                className={`inline-flex items-center justify-center w-5 h-5 rounded-md text-[10px] font-bold transition-all duration-200 hover:scale-125 ${val === 1
+                                  ? "bg-green-500/15 text-green-400"
+                                  : "bg-red-500/15 text-red-400"
+                                  }`}
                               >
                                 {val === 1 ? "✓" : "✗"}
                               </button>
@@ -1478,13 +1474,12 @@ function MonthlyTracker({
               {totals.map((t, i) => (
                 <td
                   key={i}
-                  className={`py-2 px-1 text-center text-[11px] font-bold ${
-                    isCurrentMonth && i + 1 === today
-                      ? "bg-purple-500/10 text-purple-400"
-                      : t === null
-                        ? "text-[#2a2a35]"
-                        : "text-purple-400"
-                  }`}
+                  className={`py-2 px-1 text-center text-[11px] font-bold ${isCurrentMonth && i + 1 === today
+                    ? "bg-purple-500/10 text-purple-400"
+                    : t === null
+                      ? "text-[#2a2a35]"
+                      : "text-purple-400"
+                    }`}
                 >
                   {t === null ? "·" : t}
                 </td>
@@ -1595,7 +1590,8 @@ function App() {
     const alreadyShown = sessionStorage.getItem("missedPopupShown");
     if (alreadyShown) return;
     const missed = habitsList.filter((h) => {
-      const val = trackingData[h.name]?.[yesterday];
+      const trackKey = getTrackKey(h.name, CURRENT_YEAR, CURRENT_MONTH);
+      const val = trackingData[trackKey]?.[yesterday];
       return val !== 1; // not done yesterday
     });
     if (missed.length > 0) {
@@ -1738,7 +1734,7 @@ function App() {
   const currentTodayDoneCount = habitsList.filter(
     (h) =>
       trackingData[getTrackKey(h.name, CURRENT_YEAR, CURRENT_MONTH)]?.[
-        today
+      today
       ] === 1,
   ).length;
 
@@ -2233,8 +2229,8 @@ function App() {
               const avg =
                 allEntries.length > 0
                   ? (
-                      allEntries.reduce((a, b) => a + b, 0) / allEntries.length
-                    ).toFixed(1)
+                    allEntries.reduce((a, b) => a + b, 0) / allEntries.length
+                  ).toFixed(1)
                   : "—";
               const good = allEntries.filter((v) => v >= 7).length;
               const med = allEntries.filter((v) => v >= 5 && v < 7).length;
@@ -2333,6 +2329,7 @@ function App() {
               failureData={yesterdayFailures}
               viewYear={viewYear}
               viewMonth={viewMonth}
+              missedNotes={missedNotes}
             />
           </div>
         )}
@@ -2496,7 +2493,7 @@ function App() {
                         dayNotes["__sleep__"] = missedNotes["__sleep__"];
                       existing[dayKey] = dayNotes;
                       await db.saveMissedNotes(existing);
-                    } catch {}
+                    } catch { }
                     triggerCloseMissed();
                   }}
                   className="flex-1 py-3 rounded-xl bg-orange-500 hover:bg-orange-400 text-white text-sm font-bold transition-all hover:shadow-lg hover:shadow-orange-500/20"

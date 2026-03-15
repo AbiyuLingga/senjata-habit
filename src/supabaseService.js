@@ -25,7 +25,7 @@ export async function loadHabits() {
     .order('sort_order');
 
   if (error) {
-    console.error('Error loading habits:', error);
+    console.error('Error loading habits from Supabase:', error.message, error.details);
     return DEFAULT_HABITS;
   }
 
@@ -55,7 +55,8 @@ export async function saveHabits(habits) {
     .eq('user_id', USER_ID);
 
   if (deleteError) {
-    console.error('Error deleting old habits:', deleteError);
+    console.error('Error deleting old habits from Supabase:', deleteError.message, deleteError.details);
+    console.warn('Check if "habits" table exists and if RLS policies allow deletion.');
     return;
   }
 
@@ -73,7 +74,8 @@ export async function saveHabits(habits) {
     .insert(habitsToInsert);
 
   if (insertError) {
-    console.error('Error saving habits:', insertError);
+    console.error('Error saving new habits to Supabase:', insertError.message, insertError.details);
+    console.warn('Check if "habits" table has correct schema and RLS policies.');
   }
 }
 
@@ -132,7 +134,8 @@ export async function saveTrackingData(trackingData) {
     });
 
   if (error) {
-    console.error('Error saving tracking data:', error);
+    console.error('Error saving tracking data to Supabase (upsert):', error.message, error.details);
+    console.warn('Check if "tracking" table exists and if user_id,habit_name,year,month,day have a unique constraint.');
   }
 }
 
