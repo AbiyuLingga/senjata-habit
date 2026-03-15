@@ -9,7 +9,9 @@ import {
   CartesianGrid,
 } from "recharts";
 import TrackerTab from "./TrackerTab";
+import AuthScreen from "./AuthScreen";
 import * as db from "./supabaseService";
+import { supabase } from "./supabase";
 
 // ── Close Animation Hook ────────────────────────────────
 function useCloseAnimation(onClose, duration = 250) {
@@ -1495,6 +1497,8 @@ function MonthlyTracker({
 // ── Main App ────────────────────────────────────────────
 function App() {
   const [activeTab, setActiveTab] = useState("Tracker");
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [yesterdayFailures] = useState([
     {
       habit: "Ga begadang 🔥",
@@ -1552,26 +1556,64 @@ function App() {
   const [sleepLog, setSleepLog] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // Load all data from Supabase on mount
+  useEffect(() => {
+    let mounted = true;
+    async function initAuth() {
+      const { data } = await supabase.auth.getSession();
+      if (!mounted) return;
+      setUser(data?.session?.user ?? null);
+      setAuthLoading(false);
+    }
+    initAuth();
+
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+      },
+    );
+
+    return () => {
+      mounted = false;
+      listener?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  // Load all data from Supabase once authenticated
   useEffect(() => {
     async function loadAllData() {
+      if (!user?.id) {
+        setHabitsList([]);
+        setTrackingData({});
+        setCalendarData([]);
+        setSleepLog({});
+        setMissedNotes({});
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
-      const [habits, tracking, calendar, sleep, missed] = await Promise.all([
-        db.loadHabits(),
-        db.loadTrackingData(),
-        db.loadCalendar(),
-        db.loadSleepLog(),
-        db.loadMissedNotes(),
-      ]);
-      setHabitsList(habits);
-      setTrackingData(tracking);
-      setCalendarData(calendar);
-      setSleepLog(sleep);
-      setMissedNotes(missed);
-      setLoading(false);
+      try {
+        const [habits, tracking, calendar, sleep, missed] = await Promise.all([
+          db.loadHabits(),
+          db.loadTrackingData(),
+          db.loadCalendar(),
+          db.loadSleepLog(),
+          db.loadMissedNotes(),
+        ]);
+        setHabitsList(habits);
+        setTrackingData(tracking);
+        setCalendarData(calendar);
+        setSleepLog(sleep);
+        setMissedNotes(missed);
+      } catch (err) {
+        console.error("Error loading data:", err);
+      } finally {
+        setLoading(false);
+      }
     }
+
     loadAllData();
-  }, []);
+  }, [user?.id]);
   const handleSleepChange = (val) => {
     setTodaySleep(val);
     setSleepLog((prev) => {
@@ -1581,15 +1623,9 @@ function App() {
     });
   };
 
-  // Reactive today — updates if the system clock crosses midnight
-  const [today, setToday] = useState(TODAY_DAY);
-  useEffect(() => {
-    const id = setInterval(() => {
-      const nowDay = new Date().getDate();
-      if (nowDay !== today) setToday(nowDay);
-    }, 30_000); // check every 30 seconds
-    return () => clearInterval(id);
-  }, [today]);
+  // Freeze "today" at app load so analytics widgets (Rate Bulanan / Progres Tempur)
+  // don't silently shift while the app stays open.
+  const [today] = useState(TODAY_DAY);
 
   // Check for missed habits from yesterday on mount
   useEffect(() => {
@@ -1661,7 +1697,9 @@ function App() {
     // Optionally cleanup tracking log
     setTrackingData((prev) => {
       const next = { ...prev };
-      delete next[habitName];
+      Object.keys(next).forEach((k) => {
+        if (k.startsWith(`${habitName}_`)) delete next[k];
+      });
       db.saveTrackingData(next);
       return next;
     });
@@ -1671,7 +1709,8 @@ function App() {
   const progressData = Array.from({ length: today }, (_, i) => {
     const day = i + 1;
     const score = habitsList.reduce(
-      (sum, h) => sum + (trackingData[h.name]?.[day] === 1 ? 1 : 0),
+      (sum, h) =>
+        sum + (trackingData[getTrackKey(h.name)]?.[day] === 1 ? 1 : 0),
       0,
     );
     return { day, score };
@@ -1682,7 +1721,7 @@ function App() {
     let done = 0;
     const failedDays = [];
     for (let d = 1; d <= today; d++) {
-      const val = trackingData[h.name]?.[d];
+      const val = trackingData[getTrackKey(h.name)]?.[d];
       if (val === 1) done++;
       else if (d < today) failedDays.push(d); // days in the past where not done
     }
@@ -1706,7 +1745,7 @@ function App() {
   const totalDone = habitsList.reduce((sum, h) => {
     let d = 0;
     for (let day = 1; day <= today; day++) {
-      if (trackingData[h.name]?.[day] === 1) d++;
+      if (trackingData[getTrackKey(h.name)]?.[day] === 1) d++;
     }
     return sum + d;
   }, 0);
@@ -1716,7 +1755,7 @@ function App() {
 
   // Today's score – all habits
   const todayScore = habitsList.reduce(
-    (s, h) => s + (trackingData[h.name]?.[today] === 1 ? 1 : 0),
+    (s, h) => s + (trackingData[getTrackKey(h.name)]?.[today] === 1 ? 1 : 0),
     0,
   );
 
@@ -1745,6 +1784,21 @@ function App() {
       ] === 1,
   ).length;
 
+  if (authLoading) {
+    return (
+      <div className="max-w-md mx-auto min-h-screen flex items-center justify-center bg-[#0f0f13]">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-400 text-sm">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthScreen />;
+  }
+
   if (loading) {
     return (
       <div className="max-w-md mx-auto min-h-screen flex items-center justify-center bg-[#0f0f13]">
@@ -1758,8 +1812,8 @@ function App() {
 
   return (
     <div className="max-w-md mx-auto relative pb-24 min-h-screen">
-      {/* Top Header */}
-      <header className="flex justify-between items-center p-5 sticky top-0 bg-[#0f0f13]/90 backdrop-blur-md z-40">
+	      {/* Top Header */}
+	      <header className="flex justify-between items-center p-5 sticky top-0 bg-[#0f0f13]/90 backdrop-blur-md z-40">
         <div className="flex items-center gap-3">
           <button className="text-gray-400 hover:text-purple-400 transition-colors">
             ←
@@ -1770,12 +1824,19 @@ function App() {
             </p>
             <h1 className="text-xl font-bold">Senjata Habit</h1>
           </div>
-        </div>
-        <div className="flex space-x-4">
-          <button
-            onClick={() => setShowEditListModal(true)}
-            className="w-8 h-8 rounded-full card-bg flex items-center justify-center hover:border-purple-400 text-gray-400 transition-colors hover:scale-110"
-            title="Edit Aktivitas"
+	        </div>
+	        <div className="flex space-x-4">
+	          <button
+	            onClick={() => supabase.auth.signOut()}
+	            className="w-8 h-8 rounded-full card-bg flex items-center justify-center hover:border-purple-400 text-gray-400 transition-colors hover:scale-110"
+	            title="Sign out"
+	          >
+	            ⎋
+	          </button>
+	          <button
+	            onClick={() => setShowEditListModal(true)}
+	            className="w-8 h-8 rounded-full card-bg flex items-center justify-center hover:border-purple-400 text-gray-400 transition-colors hover:scale-110"
+	            title="Edit Aktivitas"
           >
             ✎
           </button>

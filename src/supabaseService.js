@@ -1,7 +1,15 @@
 import { supabase } from './supabase';
 
-// Simple user ID - replace with supabase.auth.user().id once you add authentication
-const USER_ID = 'local-user';
+async function requireUserId() {
+  const { data, error } = await supabase.auth.getUser();
+  if (error) {
+    console.error('Error getting current user:', error.message);
+    throw error;
+  }
+  const userId = data?.user?.id;
+  if (!userId) throw new Error('Not authenticated');
+  return userId;
+}
 
 // ── Default Habits ──────────────────────────────────────
 const DEFAULT_HABITS = [
@@ -18,10 +26,11 @@ const DEFAULT_HABITS = [
 
 // ── Habits ──────────────────────────────────────────────
 export async function loadHabits() {
+  const userId = await requireUserId();
   const { data, error } = await supabase
     .from('habits')
     .select('*')
-    .eq('user_id', USER_ID)
+    .eq('user_id', userId)
     .order('sort_order');
 
   if (error) {
@@ -53,6 +62,7 @@ export async function loadHabits() {
 }
 
 export async function saveHabits(habits) {
+  const userId = await requireUserId();
   // Sort: Main first, Side second
   const sorted = [...habits].sort((a, b) => {
     const aType = a.type || 'main';
@@ -66,7 +76,7 @@ export async function saveHabits(habits) {
   const { error: deleteError } = await supabase
     .from('habits')
     .delete()
-    .eq('user_id', USER_ID);
+    .eq('user_id', userId);
 
   if (deleteError) {
     console.error('Error deleting old habits from Supabase:', deleteError.message, deleteError.details);
@@ -75,7 +85,7 @@ export async function saveHabits(habits) {
   }
 
   const habitsToInsert = sorted.map((h, index) => ({
-    user_id: USER_ID,
+    user_id: userId,
     name: h.name,
     color: h.color,
     type: h.type || 'main',
@@ -95,10 +105,11 @@ export async function saveHabits(habits) {
 
 // ── Tracking Data ───────────────────────────────────────
 export async function loadTrackingData() {
+  const userId = await requireUserId();
   const { data, error } = await supabase
     .from('tracking')
     .select('*')
-    .eq('user_id', USER_ID);
+    .eq('user_id', userId);
 
   if (error) {
     console.error('Error loading tracking data:', error);
@@ -118,6 +129,7 @@ export async function loadTrackingData() {
 }
 
 export async function saveTrackingData(trackingData) {
+  const userId = await requireUserId();
   // Convert from app format to DB rows
   const rows = [];
   Object.keys(trackingData).forEach((key) => {
@@ -130,7 +142,7 @@ export async function saveTrackingData(trackingData) {
     const dayData = trackingData[key];
     Object.keys(dayData).forEach((day) => {
       rows.push({
-        user_id: USER_ID,
+        user_id: userId,
         habit_name: habitName,
         year,
         month,
@@ -139,6 +151,8 @@ export async function saveTrackingData(trackingData) {
       });
     });
   });
+
+  if (rows.length === 0) return;
 
   // Upsert all rows (insert or update if exists)
   const { error } = await supabase
@@ -155,10 +169,11 @@ export async function saveTrackingData(trackingData) {
 
 // ── Calendar Activities ─────────────────────────────────
 export async function loadCalendar() {
+  const userId = await requireUserId();
   const { data, error } = await supabase
     .from('calendar_activities')
     .select('*')
-    .eq('user_id', USER_ID)
+    .eq('user_id', userId)
     .order('start_date');
 
   if (error) {
@@ -170,11 +185,12 @@ export async function loadCalendar() {
 }
 
 export async function saveCalendar(activities) {
+  const userId = await requireUserId();
   // Delete all existing, then insert new
   const { error: deleteError } = await supabase
     .from('calendar_activities')
     .delete()
-    .eq('user_id', USER_ID);
+    .eq('user_id', userId);
 
   if (deleteError) {
     console.error('Error deleting calendar:', deleteError);
@@ -185,7 +201,7 @@ export async function saveCalendar(activities) {
 
   const activitiesToInsert = activities.map((a) => ({
     id: a.id,
-    user_id: USER_ID,
+    user_id: userId,
     title: a.title,
     start_date: a.startDate,
     end_date: a.endDate,
@@ -205,10 +221,11 @@ export async function saveCalendar(activities) {
 
 // ── Missed Notes ────────────────────────────────────────
 export async function loadMissedNotes() {
+  const userId = await requireUserId();
   const { data, error } = await supabase
     .from('missed_notes')
     .select('*')
-    .eq('user_id', USER_ID);
+    .eq('user_id', userId);
 
   if (error) {
     console.error('Error loading missed notes:', error);
@@ -226,6 +243,7 @@ export async function loadMissedNotes() {
 }
 
 export async function saveMissedNotes(missedNotes) {
+  const userId = await requireUserId();
   // Convert from app format to DB rows
   const rows = [];
   Object.keys(missedNotes).forEach((dayStr) => {
@@ -233,13 +251,15 @@ export async function saveMissedNotes(missedNotes) {
     const dayData = missedNotes[dayStr];
     Object.keys(dayData).forEach((habitName) => {
       rows.push({
-        user_id: USER_ID,
+        user_id: userId,
         day,
         habit_name: habitName,
         reason: dayData[habitName] || '',
       });
     });
   });
+
+  if (rows.length === 0) return;
 
   // Upsert all rows
   const { error } = await supabase
@@ -255,10 +275,11 @@ export async function saveMissedNotes(missedNotes) {
 
 // ── Sleep Log ───────────────────────────────────────────
 export async function loadSleepLog() {
+  const userId = await requireUserId();
   const { data, error } = await supabase
     .from('sleep_log')
     .select('*')
-    .eq('user_id', USER_ID);
+    .eq('user_id', userId);
 
   if (error) {
     console.error('Error loading sleep log:', error);
@@ -275,12 +296,15 @@ export async function loadSleepLog() {
 }
 
 export async function saveSleepLog(sleepLog) {
+  const userId = await requireUserId();
   // Convert from app format to DB rows
   const rows = Object.keys(sleepLog).map((dayStr) => ({
-    user_id: USER_ID,
+    user_id: userId,
     day: parseInt(dayStr, 10),
     hours: sleepLog[dayStr],
   }));
+
+  if (rows.length === 0) return;
 
   // Upsert all rows
   const { error } = await supabase
@@ -294,8 +318,6 @@ export async function saveSleepLog(sleepLog) {
   }
 }
 
-// ── Helper: Get current user ID (for future auth integration) ──
-export function getCurrentUserId() {
-  // TODO: Replace with supabase.auth.getUser() when you add authentication
-  return USER_ID;
+export async function getCurrentUserId() {
+  return await requireUserId();
 }
