@@ -418,7 +418,14 @@ function AddActivityModal({ isOpen, onClose, onSave, onDelete, initialData }) {
 }
 
 // ── Edit List Modal (Select Activity to Edit) ───────────
-function EditListModal({ isOpen, onClose, habitsList, onSelect, onReorder }) {
+function EditListModal({
+  isOpen,
+  onClose,
+  habitsList,
+  onSelect,
+  onReorder,
+  onDelete,
+}) {
   const [localHabits, setLocalHabits] = useState(habitsList);
   const [draggingIndex, setDraggingIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
@@ -558,6 +565,27 @@ function EditListModal({ isOpen, onClose, habitsList, onSelect, onReorder }) {
                     >
                       {!habit.type || habit.type === "main" ? "M" : "S"}
                     </span>
+                    {onDelete && (
+                      <span
+                        style={{ pointerEvents: "auto" }}
+                        className="text-gray-500 hover:text-red-400 transition-colors cursor-pointer p-1"
+                        title="Hapus Aktivitas"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const ok = window.confirm(
+                            `Hapus aktivitas "${habit.name}"?`,
+                          );
+                          if (!ok) return;
+                          onDelete(habit.name);
+                          setLocalHabits((prev) =>
+                            prev.filter((h) => h.name !== habit.name),
+                          );
+                        }}
+                      >
+                        🗑️
+                      </span>
+                    )}
                     <span
                       style={{ pointerEvents: "auto" }}
                       className="text-gray-500 hover:text-purple-400 transition-colors cursor-pointer p-1"
@@ -2523,6 +2551,7 @@ function App() {
           setShowAddModal(true);
         }}
         onReorder={handleReorderHabits}
+        onDelete={handleDeleteActivity}
       />
 
       {/* Calendar Modal */}
