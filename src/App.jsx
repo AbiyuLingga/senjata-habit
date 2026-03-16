@@ -1581,7 +1581,15 @@ function App() {
     });
   };
 
-  const today = TODAY_DAY; // Uses real PC date
+  // Reactive today — updates if the system clock crosses midnight
+  const [today, setToday] = useState(TODAY_DAY);
+  useEffect(() => {
+    const id = setInterval(() => {
+      const nowDay = new Date().getDate();
+      if (nowDay !== today) setToday(nowDay);
+    }, 30_000); // check every 30 seconds
+    return () => clearInterval(id);
+  }, [today]);
 
   // Check for missed habits from yesterday on mount
   useEffect(() => {
@@ -2315,6 +2323,94 @@ function App() {
                   <p className="text-[10px] text-gray-600 mt-1">
                     Hari 1 → {today} Maret 2026
                   </p>
+                </div>
+              );
+            })()}
+
+            {/* Riwayat Kebiasaan - Editable history table */}
+            {(() => {
+              const isCurrentMV = viewYear === CURRENT_YEAR && viewMonth === CURRENT_MONTH;
+              const maxDay = isCurrentMV ? today : getDaysInMonth(viewYear, viewMonth);
+              const days = Array.from({ length: maxDay }, (_, i) => i + 1);
+              const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+
+              const toggleDay = (habitName, day) => {
+                const key = getTrackKey(habitName, viewYear, viewMonth);
+                setTrackingData((prev) => {
+                  const cur = prev[key]?.[day] === 1 ? 0 : 1;
+                  const next = { ...prev, [key]: { ...(prev[key] || {}), [day]: cur } };
+                  db.saveTrackingData(next);
+                  return next;
+                });
+              };
+
+              return (
+                <div className="card-bg rounded-2xl p-5">
+                  <h3 className="font-bold mb-3 flex items-center gap-2">
+                    <span>📋</span> Riwayat Kebiasaan{" "}
+                    <span className="text-xs text-gray-500 font-normal">
+                      {monthNames[viewMonth]} {viewYear}
+                    </span>
+                  </h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs border-collapse" style={{ minWidth: `${maxDay * 32 + 120}px` }}>
+                      <thead>
+                        <tr>
+                          <th className="text-left text-gray-500 font-medium py-1.5 pr-3 sticky left-0 bg-[#1a1a24] z-10 min-w-[110px]">Habit</th>
+                          {days.map((d) => (
+                            <th
+                              key={d}
+                              className={`text-center font-semibold py-1.5 px-0.5 min-w-[28px] ${isCurrentMV && d === today
+                                  ? "text-purple-400"
+                                  : "text-gray-500"
+                                }`}
+                            >
+                              {d}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {habitsList.map((h) => {
+                          const key = getTrackKey(h.name, viewYear, viewMonth);
+                          return (
+                            <tr key={h.name} className="border-t border-white/5">
+                              <td
+                                className="py-1.5 pr-3 font-medium truncate sticky left-0 bg-[#1a1a24] z-10 max-w-[110px]"
+                                style={{ color: h.color }}
+                                title={h.name}
+                              >
+                                {h.name}
+                              </td>
+                              {days.map((d) => {
+                                const val = trackingData[key]?.[d];
+                                const isDone = val === 1;
+                                const isFuture = isCurrentMV && d > today;
+                                return (
+                                  <td key={d} className="text-center py-1">
+                                    <button
+                                      onClick={() => !isFuture && toggleDay(h.name, d)}
+                                      disabled={isFuture}
+                                      className={`w-6 h-6 rounded text-[11px] transition-all ${isFuture
+                                          ? "opacity-20 cursor-not-allowed bg-[#2a2a35]"
+                                          : isDone
+                                            ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                                            : "bg-red-500/10 text-red-400 hover:bg-red-500/20"
+                                        }`}
+                                      title={`${h.name} – Hari ${d}: ${isDone ? "Done" : "Missed"}`}
+                                    >
+                                      {isFuture ? "·" : isDone ? "✓" : "✗"}
+                                    </button>
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="text-[10px] text-gray-600 mt-2">Tap ✓/✗ untuk ubah status hari sebelumnya</p>
                 </div>
               );
             })()}
