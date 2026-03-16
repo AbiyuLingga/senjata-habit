@@ -259,7 +259,7 @@ export default function TrackerTab({
 
                   {/* ── Daily Action Checklist ── */}
                   <div>
-                        <p className="text-xs text-purple-400 uppercase tracking-wider font-semibold mb-2 px-1">✅ Checklist Senjata</p>
+                        <p className="text-xs text-purple-400 uppercase tracking-wider font-semibold mb-2 px-1">✅ Checklist Habit</p>
                         <div className="space-y-2">
                               {habits.map((habitObj) => {
                                     const habit = habitObj.name;

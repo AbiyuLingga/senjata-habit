@@ -285,9 +285,9 @@ function AddActivityModal({ isOpen, onClose, onSave, onDelete, initialData }) {
 
           <div className="flex justify-between items-center mb-5">
             <div>
-              <p className="text-xs text-purple-400 font-semibold tracking-wider uppercase">
-                Tambah Senjata
-              </p>
+                <p className="text-xs text-purple-400 font-semibold tracking-wider uppercase">
+                Tambah Aktivitas
+                </p>
               <h2 className="text-lg font-bold">Aktivitas Baru</h2>
             </div>
             <button
@@ -323,14 +323,14 @@ function AddActivityModal({ isOpen, onClose, onSave, onDelete, initialData }) {
               <label className="text-xs text-gray-400 font-semibold mb-2 block">
                 Tipe Aktivitas
               </label>
-              <div className="relative bg-[#2a2a35] border border-[#3a3a45] rounded-xl p-1 flex">
+              <div className="relative bg-[#2a2a35] border border-[#3a3a45] rounded-lg p-0.5 flex">
                 <div
-                  className={`absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] rounded-lg bg-purple-500/20 border border-purple-500/20 transition-transform duration-200 ${type === "side" ? "translate-x-full" : ""}`}
+                  className={`absolute top-0.5 bottom-0.5 left-0.5 w-[calc(50%-2px)] rounded-md bg-purple-500/20 border border-purple-500/20 transition-transform duration-200 ${type === "side" ? "translate-x-full" : ""}`}
                 />
                 <button
                   type="button"
                   onClick={() => setType("main")}
-                  className={`relative z-10 flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${type === "main" ? "text-white" : "text-gray-400 hover:text-gray-200"}`}
+                  className={`relative z-10 flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors ${type === "main" ? "text-white" : "text-gray-400 hover:text-gray-200"}`}
                   aria-pressed={type === "main"}
                 >
                   Main
@@ -338,7 +338,7 @@ function AddActivityModal({ isOpen, onClose, onSave, onDelete, initialData }) {
                 <button
                   type="button"
                   onClick={() => setType("side")}
-                  className={`relative z-10 flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${type === "side" ? "text-white" : "text-gray-400 hover:text-gray-200"}`}
+                  className={`relative z-10 flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors ${type === "side" ? "text-white" : "text-gray-400 hover:text-gray-200"}`}
                   aria-pressed={type === "side"}
                 >
                   Side
@@ -493,7 +493,7 @@ function EditListModal({
           <div className="w-12 h-1.5 bg-[#3a3a45] rounded-full mx-auto mb-6" />
           <h2 className="text-xl font-bold mb-2">Pilih yang mau di-edit</h2>
           <p className="text-xs text-gray-400 mb-6 flex justify-between items-center">
-            <span>Pilih salah satu aktivitas dari daftar senjata lo.</span>
+            <span>Pilih salah satu aktivitas dari daftar aktivitas lo.</span>
             <span className="text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded font-semibold text-[10px] tracking-wider">
               ≡ DRAG TO REORDER
             </span>
@@ -1876,7 +1876,7 @@ function App() {
             <p className="text-xs text-purple-400 font-semibold tracking-wider uppercase">
               Daily Weapon
             </p>
-            <h1 className="text-xl font-bold">Senjata Habit</h1>
+            <h1 className="text-xl font-bold">Habit Tracker</h1>
           </div>
         </div>
         <div className="flex space-x-4">
