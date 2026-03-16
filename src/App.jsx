@@ -429,6 +429,9 @@ function EditListModal({
   const [localHabits, setLocalHabits] = useState(habitsList);
   const [draggingIndex, setDraggingIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null); // habit object | null
+  const { closing: closingDelete, triggerClose: triggerCloseDelete } =
+    useCloseAnimation(() => setDeleteTarget(null));
 
   useEffect(() => {
     setLocalHabits(habitsList);
@@ -566,25 +569,19 @@ function EditListModal({
                       {!habit.type || habit.type === "main" ? "M" : "S"}
                     </span>
                     {onDelete && (
-                      <span
+                      <button
+                        type="button"
                         style={{ pointerEvents: "auto" }}
-                        className="text-gray-500 hover:text-red-400 transition-colors cursor-pointer p-1"
+                        className="w-8 h-8 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 hover:text-red-200 hover:bg-red-500/15 hover:border-red-500/30 transition-all flex items-center justify-center cursor-pointer"
                         title="Hapus Aktivitas"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          const ok = window.confirm(
-                            `Hapus aktivitas "${habit.name}"?`,
-                          );
-                          if (!ok) return;
-                          onDelete(habit.name);
-                          setLocalHabits((prev) =>
-                            prev.filter((h) => h.name !== habit.name),
-                          );
+                          setDeleteTarget(habit);
                         }}
                       >
-                        🗑️
-                      </span>
+                        <span className="text-sm leading-none">🗑️</span>
+                      </button>
                     )}
                     <span
                       style={{ pointerEvents: "auto" }}
@@ -604,6 +601,73 @@ function EditListModal({
           </div>
         </div>
       </div>
+
+      {/* Delete confirmation (in-app, not browser confirm) */}
+      {deleteTarget && (
+        <>
+          <div
+            className={`fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] ${closingDelete ? "animate-backdrop-out" : "animate-backdrop"}`}
+            onClick={triggerCloseDelete}
+          />
+          <div
+            className={`fixed bottom-0 left-0 right-0 z-[70] max-w-md mx-auto ${closingDelete ? "animate-slide-down" : "animate-slide-up"}`}
+          >
+            <div className="bg-[#1a1a24] border border-red-500/25 rounded-t-3xl p-6 shadow-2xl">
+              <div className="w-10 h-1 bg-gray-600 rounded-full mx-auto mb-4" />
+
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-red-300 text-lg leading-none">🗑️</span>
+                  </div>
+                  <div>
+                    <p className="text-xs text-red-300 font-semibold tracking-wider uppercase">
+                      Hapus Aktivitas
+                    </p>
+                    <h3 className="text-lg font-bold leading-snug">
+                      {deleteTarget.name}
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                      Ini bakal ngapus aktivitas dari list. Data check-in bulan ini
+                      untuk aktivitas ini juga akan ikut hilang.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={triggerCloseDelete}
+                  className="w-8 h-8 rounded-full bg-[#2a2a35] flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+                  title="Tutup"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={triggerCloseDelete}
+                  className="flex-1 py-3 rounded-xl bg-[#2a2a35] text-gray-300 text-sm font-semibold hover:bg-[#3a3a45] transition-colors focus:outline-none"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onDelete?.(deleteTarget.name);
+                    setLocalHabits((prev) =>
+                      prev.filter((h) => h.name !== deleteTarget.name),
+                    );
+                    triggerCloseDelete();
+                  }}
+                  className="flex-1 py-3 rounded-xl bg-red-500/20 border border-red-500/30 text-red-200 text-sm font-bold hover:bg-red-500 hover:text-white transition-all focus:outline-none"
+                >
+                  Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }
