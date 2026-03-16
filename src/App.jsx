@@ -318,32 +318,32 @@ function AddActivityModal({ isOpen, onClose, onSave, onDelete, initialData }) {
               {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
             </div>
 
-            {/* Type selection */}
-            <div className="mb-4 flex gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  value="main"
-                  checked={type === "main"}
-                  onChange={(e) => setType(e.target.value)}
-                  className="accent-purple-500 w-4 h-4"
-                />
-                <span className="text-sm font-medium text-white">
-                  Main Activity
-                </span>
+            {/* Type selection (slider) */}
+            <div className="mb-4">
+              <label className="text-xs text-gray-400 font-semibold mb-2 block">
+                Tipe Aktivitas
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  value="side"
-                  checked={type === "side"}
-                  onChange={(e) => setType(e.target.value)}
-                  className="accent-purple-500 w-4 h-4"
+              <div className="relative bg-[#2a2a35] border border-[#3a3a45] rounded-xl p-1 flex">
+                <div
+                  className={`absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] rounded-lg bg-purple-500/20 border border-purple-500/20 transition-transform duration-200 ${type === "side" ? "translate-x-full" : ""}`}
                 />
-                <span className="text-sm font-medium text-gray-400">
-                  Side Activity
-                </span>
-              </label>
+                <button
+                  type="button"
+                  onClick={() => setType("main")}
+                  className={`relative z-10 flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${type === "main" ? "text-white" : "text-gray-400 hover:text-gray-200"}`}
+                  aria-pressed={type === "main"}
+                >
+                  Main
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setType("side")}
+                  className={`relative z-10 flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${type === "side" ? "text-white" : "text-gray-400 hover:text-gray-200"}`}
+                  aria-pressed={type === "side"}
+                >
+                  Side
+                </button>
+              </div>
             </div>
 
             {/* Color picker */}
