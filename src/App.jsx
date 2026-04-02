@@ -9,7 +9,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import TrackerTab from "./TrackerTab";
-import * as db from "./supabaseService";
+import * as db from "./storageService";
 
 // ── Close Animation Hook ────────────────────────────────
 function useCloseAnimation(onClose, duration = 250) {
@@ -25,10 +25,6 @@ function useCloseAnimation(onClose, duration = 250) {
 }
 
 // ── Constants ───────────────────────────────────────────
-const STORAGE_KEY = "senjata-habit-tracker";
-const HABITS_STORAGE_KEY = "senjata-habit-list";
-const CALENDAR_STORAGE_KEY = "senjata-calendar";
-const MISSED_STORAGE_KEY = "senjata-missed";
 
 // Real date helpers
 const _now = new Date();
