@@ -192,16 +192,23 @@ export default function TrackerTab({
       saveTrackingData,
       today,
       onSleepChange,
+      initialSleep = 6.5,
+      missedNotes = {},
       viewYear,
       viewMonth,
       getTrackKey
 }) {
       const habits = habitsList.length > 0 ? habitsList : DAILY_HABITS.map(name => ({ name, type: 'main' }));
 
-      // Failure reasons local to today (persisted separately if needed)
-      const [failureReasons, setFailureReasons] = useState({});
+      // Failure reasons: restore from missedNotes for today
+      const todayMissed = missedNotes[String(today)] || {};
+      const [failureReasons, setFailureReasons] = useState(todayMissed);
       const [activeFailModal, setActiveFailModal] = useState(null);
-      const [sleep, setSleep] = useState(6.5);
+      const [sleep, setSleep] = useState(initialSleep);
+
+      // Sync sleep and failure reasons when props change (after data loads)
+      useEffect(() => { setSleep(initialSleep); }, [initialSleep]);
+      useEffect(() => { setFailureReasons(missedNotes[String(today)] || {}); }, [missedNotes, today]);
 
       // Lift sleep to parent for Analisis tab
       const handleSleepChange = (val) => {

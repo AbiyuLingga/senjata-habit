@@ -1955,6 +1955,8 @@ function App() {
               saveTrackingData={db.saveTrackingData}
               today={today}
               onSleepChange={handleSleepChange}
+              initialSleep={sleepLog[today] ?? 6.5}
+              missedNotes={missedNotes}
               viewYear={CURRENT_YEAR}
               viewMonth={CURRENT_MONTH}
               getTrackKey={getTrackKey}
