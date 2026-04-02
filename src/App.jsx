@@ -1656,6 +1656,7 @@ function App() {
       setTrackingData(tracking);
       setCalendarData(calendar);
       setSleepLog(sleep);
+      if (sleep[TODAY_DAY] !== undefined) setTodaySleep(sleep[TODAY_DAY]);
       setMissedNotes(missed);
       setLoading(false);
     }
